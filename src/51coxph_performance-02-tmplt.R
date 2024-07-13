@@ -51,7 +51,7 @@ df_devx$PI_dev <- PI_dev
 
 
 #### PI in test/validation data
-fit_val <- update(fit_dev, data = df_val)
+fit_val <- update(fit_dev, data = df_valx)
 
 Xb_val <- model.matrix(fit_val) %*% coef(fit_dev) # determine Xb in validation data 
                                                   # by using coefficients of development data 
@@ -87,13 +87,13 @@ library(rms)
 library(survAUC)
 
 
-#--rcorr.cens(-1*PI_val, Surv(df_dev$time, df_dev$status))[1]
-rcorr.cens(-1*PI_dev, Surv(df_dev[, tvars[1]], df_dev[, tvars[2] ]))[1] # Harrell's c-index
+#--rcorr.cens(-1*PI_val, Surv(df_devx$time, df_devx$status))[1]
+rcorr.cens(-1*PI_dev, Surv(df_devx[, tvars[1]], df_devx[, tvars[2] ]))[1] # Harrell's c-index
 
 GHCI(PI_dev) # Gonen and Heller
 
 # Validation
-rcorr.cens(-1*PI_val, Surv(df_val[, tvars[1]], df_val[, tvars[2]]))[1] # Harrell's c-index in val_data
+rcorr.cens(-1*PI_val, Surv(df_valx[, tvars[1]], df_valx[, tvars[2]]))[1] # Harrell's c-index in val_data
 
 #--------- METHOD 4: Kaplan-Meier curves for risk groups
 # Determine risk groups by categorizing the PI in four groups at the 16th, 50th and 84th centiles (page 5, under Example).
@@ -103,7 +103,7 @@ rcorr.cens(-1*PI_val, Surv(df_val[, tvars[1]], df_val[, tvars[2]]))[1] # Harrell
 quant_PI_dev <- quantile(PI_dev, probs=c(0, 0.16, 0.5, 0.84, 1)) # Determine risk groups
 df_devx$Risk_group_dev <- cut(PI_dev, breaks = quant_PI_dev, include.lowest = TRUE,
                                  labels = c(1,2,3,4))
-fit_dev_survfit <- survfit(Surv(df_dev[, tvars[1]], df_dev[, tvars[2]]) ~ Risk_group_dev, data = df_devx)
+fit_dev_survfit <- survfit(Surv(df_devx[, tvars[1]], df_devx[, tvars[2]]) ~ Risk_group_dev, data = df_devx)
 library(survminer)
 
 
@@ -119,7 +119,7 @@ df_valx$Risk_group_val <- cut(PI_val, breaks = quant_PI_val,
                                 include.lowest = TRUE,  labels = c(1,2,3,4))
 
 # KM curve validation data
-fit_val_survfit <- survfit(Surv(df_val[, tvars[1]], df_val[, tvars[2]]) ~ Risk_group_val, data = df_valx)
+fit_val_survfit <- survfit(Surv(df_valx[, tvars[1]], df_valx[, tvars[2]]) ~ Risk_group_val, data = df_valx)
 p2 <- ggsurvplot(fit_val_survfit, title = "Survival curve (validation)") # survival curve in validation dataset
 print(p2)
 
@@ -172,15 +172,20 @@ print(tab_model(fit_val_hr, show.r2 = FALSE, file=fhtml))
 # Start by modeling the baseline hazard function in the derivation data 
 bh <- basehaz(fit_dev) # Determine baseline hazard
 
-#--baseh.all <- bh[match(df_dev$time, bh[, 2]), 1] # match baseline hazard to all survival times
-baseh.all <- bh[match(df_dev[ , tvars[1]], bh[, 2]), 1]
+#--baseh.all <- bh[match(df_devx$time, bh[, 2]), 1] # match baseline hazard to all survival times
+baseh.all <- bh[match(df_devx[ , tvars[1]], bh[, 2]), 1]
 
 df_devx <- data.frame(df_devx, baseh.all)
 # take log of baseline hazard and use as outcome for next step
 df_devx$ln_bh <- log(df_devx$baseh.all) 
 
 # Model the log cumulative baseline hazard function (ln H0(t)) (Page 10, under Method 7)
-
+#   df_devx$ln_bh  <- ifelse(df_devx$ln_bh == -Inf,min( , df_devx$ln_bh)
+  df_devx <- within(df_devx,{
+     ln_bh <- ifelse(ln_bh == -Inf, min(ln_bh[is.finite(ln_bh)]), ln_bh)
+     ln_bh <- ifelse(ln_bh == +Inf, max(ln_bh[is.finite(ln_bh)]), ln_bh)
+  })
+  
   fit_bh <- glm(ln_bh_formula, data=df_devx)
   fhtml <- paste0(prefix_cum, "_tabM07-fit_bh.html")                 
   print(tab_model(fit_bh, show.r2 = FALSE, file=fhtml)) # result of model fit                 
@@ -188,8 +193,8 @@ df_devx$ln_bh <- log(df_devx$baseh.all)
   bh_pred <- exp(log_H0_dev)
   gr <- factor(rep(1:2, each=length(bh_pred)), labels = c("Observed", "Predicted"))
 
-  #--df_plot <- data.frame(bh=c(df_devx$baseh.all, bh_pred), time=c(df_dev$time, df_dev$time), gr=gr)
-  df_plot <- data.frame(bh=c(df_devx$baseh.all, bh_pred), time=c(df_dev[,tvars[1]], df_dev[,tvars[1]]), gr=gr)
+  #--df_plot <- data.frame(bh=c(df_devx$baseh.all, bh_pred), time=c(df_devx$time, df_devx$time), gr=gr)
+  df_plot <- data.frame(bh=c(df_devx$baseh.all, bh_pred), time=c(df_devx[,tvars[1]], df_devx[,tvars[1]]), gr=gr)
 
   fpdf <- paste0(prefix_cum, "_M7.pdf")
   pdf(fpdf)
@@ -198,13 +203,13 @@ df_devx$ln_bh <- log(df_devx$baseh.all)
   print(p1x)
 
   # S1.Calculate S0(t) in the validation dataset
- log_H0_val <- predict(fit_bh, newdata = df_val)
+ log_H0_val <- predict(fit_bh, newdata = df_valx)
  s0_val <- exp(-exp(log_H0_val)) # derive baseline survival functio
 
 # S2. For a given PI value compute the predicted survival function for each individual
 
-pred_surv_val <- matrix(NA, nrow(df_val), nrow(df_val))
-for(i in 1:nrow(df_val)){
+pred_surv_val <- matrix(NA, nrow(df_valx), nrow(df_valx))
+for(i in 1:nrow(df_valx)){
   pred_surv_val[i, ] <- s0_val^exp(df_valx$PI_val[i])
 }
 df_surv_val <- data.frame(LP_val=df_valx$Risk_group_val, pred_surv_val)
@@ -217,7 +222,7 @@ df_surv_mean_val <- df_surv_val %>%
   summarise_all("mean")
 
 df_surv_mean_val <- t(df_surv_mean_val[, -1])
-df_val <- data.frame(df_val, df_surv_mean_val)
+df_valx <- data.frame(df_valx, df_surv_mean_val)
 
 # S4. Plot curves in validation data
 
@@ -227,10 +232,10 @@ cform1 <- paste0(surv," ~ Risk_group_val")
 fit<- survfit(as.formula(cform1), data = df_valx)
 p1 <- ggsurvplot(fit)
 p2x <- p1$plot +
-  geom_line(data=df_val, aes(x = !!tvar_name, y = X1)) +
-  geom_line(data=df_val, aes(x = !!tvar_name, y = X2)) +
-  geom_line(data=df_val, aes(x = !!tvar_name, y = X3)) +
-  geom_line(data=df_val, aes(x = !!tvar_name, y = X4)) 
+  geom_line(data=df_valx, aes(x = !!tvar_name, y = X1)) +
+  geom_line(data=df_valx, aes(x = !!tvar_name, y = X2)) +
+  geom_line(data=df_valx, aes(x = !!tvar_name, y = X3)) +
+  geom_line(data=df_valx, aes(x = !!tvar_name, y = X4)) 
 
 print(p2x)
 dev.off()
