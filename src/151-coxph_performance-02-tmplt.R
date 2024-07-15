@@ -8,35 +8,41 @@
 # to regression anaylsis based on fractional polynomials for modelling continuous variables.
 # John Wiley & Sons.
 
-# Objects needed: Infox prototype list
-## form    <- as.formula(cform)
+# Objects needed: 
+
+csurv    <- paste0("Surv(",tvars[1],",", tvars[2], ")")
+cxform <- paste(x_cterms, sep="", collapse="+")
+
+cform   <- paste0(csurv, "~", cxform) # Formula as a string
+
+form <- as.formula(cform)
+
+#-- Create Info lists for development and validation datasets
+
+# clInfox is a prototype Info list
+# Contents of this list will be used to feed `call()` function
+clInfox <- list(
+  data  = "Placeholder",
+  formula = form
+) 
 
 
-Info1 <- Infox
-Info1$data <- df_names[1] # Development data name : Ex:"df_dev"
+clInfo1 <- clInfox
+clInfo1$data <- as.name(df_names[1]) # Development data name : Ex: `df_dev`
 
-Info2 <- Infox
-Info2$data <- df_names[2] # Validation data name : Ex:"df_val"
+clInfo2 <- clInfox
+clInfo2$data <- as.name(df_names[2]) # Validation data name : Ex:  `df_val`
 
-# Call lists
-
-cl1 <- list(
-        formula = as.formula(Info1$formula),
-        data = eval(as.name(Info1$data))
-)
+fit_dev <- do.call("coxph", clInfo1) # Model fit using developmental data
+fit_val <- do.call("coxph", clInfo2) # Model fit using validation data
 
 
-fit_dev <- do.call("coxph", cl1)
+rm(clInfox, x_cterms, df_names)
 
-cl2 <- list(
-        formula = as.formula(Info2$formula),
-        data = eval(as.name(Info2$data))
-)
-fit_val <- do.call("coxph", cl2)
     
-assign("df_devx", eval(parse(text = Info1$data)), envir = .GlobalEnv)  #  df_devx: Working version of validation data frame 
+assign("df_devx", eval(clInfo1$data), envir = .GlobalEnv)  #  `df_devx`: Working version of validation data frame 
 
-assign("df_valx", eval(parse(text = Info2$data)), envir = .GlobalEnv)  #  df_valx: Working version of validation data frame 
+assign("df_valx", eval(clInfo2$data), envir = .GlobalEnv)  #  `df_valx`: Working version of validation data frame 
 
 graphics.off()
 
@@ -131,7 +137,7 @@ df_val_KM <- df_valx %>%
   group_split(Risk_group_val)
 surv_val <- lapply(df_val_KM, function(x){
   #--obj_surv <- survfit(Surv(time, status) ~ 1, data = x)
-  cform1 <- paste0(surv, "~1") 
+  cform1 <- paste0(csurv, "~1") 
   obj_surv <- survfit(as.formula(cform1), data = x)
   data.frame(time=obj_surv$time, surv=obj_surv$surv)
 })
@@ -154,14 +160,14 @@ dev.off()
 #--- METHOD 6: Hazard ratios between risk groups
 
 #-- (fit_dev_hr <-  coxph(Surv(time, status) ~ factor(Risk_group_dev), data=df_devx))
-cform1 <- paste0(surv, "~factor(Risk_group_dev)")
+cform1 <- paste0(csurv, "~factor(Risk_group_dev)")
 (fit_dev_hr <-  coxph(as.formula(cform1), data=df_devx))
 
 fhtml <-paste0(prefix_cum, "_tabM06a-fit_dev_hr.html") 
 print(tab_model(fit_dev_hr, show.r2 = FALSE, file=fhtml))
 
 #-- (fit_val_hr <-  coxph(Surv(time, status) ~ factor(Risk_group_val), data=df_valx))
-cform1 <- paste0(surv, "~factor(Risk_group_val)")
+cform1 <- paste0(csurv, "~factor(Risk_group_val)")
 (fit_val_hr <-  coxph(as.formula(cform1), data=df_valx))
 
 fhtml <-paste0(prefix_cum, "_tabM06b-fit_val_hr.html") 
@@ -204,7 +210,7 @@ df_devx$ln_bh <- log(df_devx$baseh.all)
 
   # S1.Calculate S0(t) in the validation dataset
  log_H0_val <- predict(fit_bh, newdata = df_valx)
- s0_val <- exp(-exp(log_H0_val)) # derive baseline survival functio
+ s0_val <- exp(-exp(log_H0_val)) # derive baseline survival function
 
 # S2. For a given PI value compute the predicted survival function for each individual
 
@@ -228,7 +234,7 @@ df_valx <- data.frame(df_valx, df_surv_mean_val)
 
 library(survminer)
 tvar_name <- as.name(tvars[1])
-cform1 <- paste0(surv," ~ Risk_group_val")
+cform1 <- paste0(csurv," ~ Risk_group_val")
 fit<- survfit(as.formula(cform1), data = df_valx)
 p1 <- ggsurvplot(fit)
 p2x <- p1$plot +
