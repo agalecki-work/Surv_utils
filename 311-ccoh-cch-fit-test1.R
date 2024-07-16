@@ -86,20 +86,6 @@ clInfo_cchs4$method <- "II.Borgan"
 
 M4.BII <- do.call("cch", clInfo_cchs4)
 
-require(broom)
-
-# summarize model fit with tidiers + visualization
-tidy(M1.ccP)
-
-# coefficient plot
-library(ggplot2)
-
-ggplot(tidy(M1.ccP), aes(x = estimate, y = term)) +
-  geom_point() +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0) +
-  geom_vline(xintercept = 0)
-
-
 
 fit_nms <- c("M1.ccP", "M2.ccSP", "M3.BI", "M4.BII")
 

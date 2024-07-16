@@ -6,7 +6,7 @@
 library(survival)  
 
 data(nwtco)   # The complete Wilms Tumor Data, nobs= 4028
-cohort_size <- nrow(nwtco) 
+total_cohort_size <- nrow(nwtco) 
 subcoh <- nwtco$in.subcohort
 selccoh <- with(nwtco, rel==1|subcoh==1)
 table(selccoh) # 2874 + 486
