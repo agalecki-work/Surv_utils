@@ -10,13 +10,13 @@ The `./data` subfolder contains R scripts that generate various datasets
 
 Input: 
 
-* `survival::rotterdam` (training)
-* `survival::gbsg` (external validation)
+* `survival::rotterdam`
+* `survival::gbsg`
 
 Output:
 
-* `rott5` Training dataset 
-* `gbsg5` Validation dataset 
+* `rott5` Training/developmental dataset 
+* `gbsg5` External validation dataset 
 
 Notes: 
 
@@ -37,7 +37,7 @@ Input:
 Output:
 
 * `df_dev` Training/developmental dataset 
-* `df_val` Validation dataset 
+* `df_val` External validation dataset 
 
 Notes: 
 
@@ -66,7 +66,7 @@ Scripts are divided into four groups.
 with time, status (0,1) variables
 
 
-## 2xx:  SRS data: competing risks model 
+## 2xx:  SRS data: Competing Risks model 
 
 with time, status (0,1,2) variables
 
@@ -78,4 +78,7 @@ Case-cohort study with time, status (0,1) variables
 df from case cohort study
 `subcohort` indicator variable in `ccoh.data`
 
-## 4xx:   Case-cohort study for competing risks model , with time, status (0,1,2) variables
+## 4xx:  C-C data: Competing Risks model 
+
+
+Case-cohort study for competing risks model , with time, status (0,1,2) variables
