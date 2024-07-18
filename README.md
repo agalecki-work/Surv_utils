@@ -66,7 +66,7 @@ Scripts are divided into four groups.
 with time, status (0,1) variables
 
 
-## 2xx:  SRS data: Competing Risks model 
+## 2xx:  SRS data: Competing Risks 
 
 with time, status (0,1,2) variables
 
@@ -78,7 +78,7 @@ Case-cohort study with time, status (0,1) variables
 df from case cohort study
 `subcohort` indicator variable in `ccoh.data`
 
-## 4xx:  C-C data: Competing Risks model 
+## 4xx:  C-C data: Competing Risks 
 
 
 Case-cohort study for competing risks model , with time, status (0,1,2) variables
