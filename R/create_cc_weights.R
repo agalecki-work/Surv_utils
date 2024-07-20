@@ -1,5 +1,5 @@
  create_cc_weights <- function(data, subcohort, case, n_total){
-   ## n_total = nrow(data)
+   ## n_total  number of subjects in the entire cohort study
    n_subcohort = sum(data$subcohort)
    ## n_non_cases_overall = sum(data$case == 0)
    n_non_cases_overall <- n_total - sum(data$case == 1)

@@ -1,6 +1,5 @@
 rm(list=ls())
 require(survival)
-require(openxlsx)
 
 source("./R/zzz_Rfuns.R") # R functions loaded
 
@@ -8,10 +7,11 @@ data_path <- "./data/"
 
 require(dplyr)
 
-source("./data/accord_Bala0724.R") # Data frame  createed
+source("./data/accord_Bala0724.R") # Data frame(s) created
 ls()
 
 
+# Subcohort only
 alb_subcohort <- alb %>% filter(SUBCO15 == 1) %>% select(-SUBCO15)
 
 
@@ -23,31 +23,25 @@ alb_subcohort <- alb %>% filter(SUBCO15 == 1) %>% select(-SUBCO15)
 
 df_name <- "alb"
 id  <- "MaskID"
-tvars1 <- c("YRS_PRIMAR", "PRIMARY")             # Variables used to create Surv object
-tvars2 <- c("YRS_CASE40", "CASE40_JUN")
-tvars3 <- c("YRS_DECLIN", "DECLINE40_")
-tvars4 <- c("YRS_CASE50", "case50_jun")            # Competing risk included in the last row of `tvars_all` matrix
 
-tvars_all <- rbind(tvars1, tvars2, tvars3, tvars4)
-colnames(tvars_all) <- c("timevar", "eventvar")
-tvars_all 
-rm(tvars1, tvars2, tvars3)           # Cleanup
+time_horizon <- c(Inf)  # 10 years, if vector with two elements use it to define tm_cut (Inf no truncation)
 
 
-time_horizon <- Inf  # 10 years, Inf no truncation
-tm_cut       <- Inf
-
-CC_data      <- TRUE
+CC_data      <- TRUE         # if FALSE subcohort and ccase ignored 
 subcohort    <- "SUBCO15"    # Variable name (string) for data from C-C studies
-case         <- "PRIMARY"    #Select status (0,1) variable
+cch_case        <- "PRIMARY"    # Select status (0,1) variable
 
-total_cohort_size <- 8000
 
 #---- Step 0: Check input info
+update_InfoNms <- c("df_name", "id", "tvars_all","time_horizon", "CC_data", "subcohort", "ccase") 
+update_Info <- lapply(update_InfoNms, FUN= function(nm) eval(parse(text=nm)))
+names(update_Info) <- update_InfoNms 
+
 ntvars <- nrow(tvars_all)
 varNms <- colnames(eval(as.name(df_name)))
 vars_not_found <- setdiff(c(as.vector(tvars_all), id, subcohort),varNms) 
 
+tm_cut <- if (length(time_horizon) ==2) time_horizon[2] else time_horizon[1]
 
 #---- Step 1: Truncate time for all time variables included in `tvars_all` matrix
 
@@ -126,9 +120,9 @@ rownames(tbls_S2)[2] <- "event"
 tbls_S2
 
 
-#--- Step 3: Create weight variables for C-C study:
+#--- Step 3: Create weight variables for C-C study in df_name : Self, SelfPrentice, BorganI
 
-if (CC_data){ 
+if (CC_data){ # C-C data only
   assign(df_name, 
       create_cc_weights(as.name(df_name), as.name(subcohort), as.name(subcohort), total_cohort_size),
       envir=.GlobalEnv)
