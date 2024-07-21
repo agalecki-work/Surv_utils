@@ -27,18 +27,22 @@ tvars_all
 
 rm(tvars1, tvars2, tvars3, tvars4)           # Cleanup
 
-# Mandatory list `dfAll_info`
+# Mandatory (template) list `dfAll_info`
 dfAll_Info <- list(
    current_folder = current_folder,
-   datain_script   = "001cric_olinknpx_112023_v1_imputed0",  # R script that creates data frames 
-   datain_basename = "001cric_olinknpx_112023_v1_imputed0",
-   datain_extension = "datain_extension", 
-   dfnms_all   = c("cric_imputed"),  # Data frames created by this script
-   df_name     = "Place holder", # One or two data frames (training and/or validation) selected
-   id          = "PID",
-   tvars_all   = tvars_all,    # Matrix with  variables' names used to create Surv objects
-   time_horizon = 10, 
-   CCH_data    = FALSE
+   datain_script   = "001cric_olinknpx_112023_v1_imputed0",  # R script (this file) that creates data frames 
+   datain_basename = datain_basename,
+   datain_extension = datain_extension, 
+   dfnms_all       = "cric_imputed",     # Data frames created by this script
+   dfin_name       = "cric_imputed",     # Note: Two data frames, if external validation 
+   CCH_data        = FALSE,              # Case-cohort data
+   id              = "PID",
+   cfilter         = character(0),  # string with filter stmnt 
+   time_horizon    = c(10,9.99),    # Second element used as a cut-off 
+   initSplit       = 0.8,
+   nfolds          = 10,
+   tvars_all       = tvars_all      # Matrix (two columns) with  variables' names used to create Surv objects
 )
 rm(current_folder, datain_basename, datain_extension, tvars_all)
-print(dfAll_Info)
+message("--- print(dfAll_Info)")
+# print(dfAll_Info)

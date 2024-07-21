@@ -27,8 +27,8 @@ accord <- accord %>%
   
 ##############################################################################################
 # Split by alb status
-normo <- filter(accord, UACR_gp1 == 1) #n=961
-alb   <- filter(accord, UACR_gp1 == 2) #n=432
+# -- normo <- filter(accord, UACR_gp1 == 1) #n=961
+# -- alb   <- filter(accord, UACR_gp1 == 2) #n=432
 ##############################################################################################
 
 
@@ -49,15 +49,17 @@ dfAll_Info <- list(
    datain_script  = "002accord_Bala0724",  # R script that creates data frames 
    datain_basename = datain_basename,
    datain_extension = datain_extension, 
-   dfnms_all   = c("accord", "normo", "alb"),  # Data frames created by this script
-   df_name    = "Place holder", # One or two data frames (training and/or validation) selected
+   dfnms_all   = c("accord"),  # Data frames created by this script
+   dfin_name   = "accord", # One or two data frames (training and/or validation) selected
+   CCH_data    = TRUE,
    id          = "MaskID",
    tvars_all   = tvars_all,    # Matrix with  variables' names used to create Surv objects
+   cfilter      = "UACR_gp1 == 2",     # alb dataset
    time_horizon = Inf, 
-   CCH_data    = TRUE,
-   subcohort        = "SUBCO15",      # Variable name (string) for data from C-CH studies
-   cch_case         = tvars_all[1,2], # Case variable by default status variable for the first outcome (first row in tvars matrix)
+   initSplit    = 0.8,
+   subcohort    = "SUBCO15",      # Variable name (string) for data from C-CH studies
+   cch_case     = tvars_all[1,2], # Case variable by default status variable for the first outcome (first row in tvars matrix)
    total_cohort_size = 8000
 )
 rm(current_folder, datain_basename, datain_extension, tvars_all)
-print(dfAll_Info)
+# print(dfAll_Info)
