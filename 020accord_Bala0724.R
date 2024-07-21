@@ -1,4 +1,4 @@
-## source("01accord_Bala0724.R")
+## source("020accord_Bala0724.R")
 
 rm(list =ls())
 
@@ -41,19 +41,20 @@ tvars_all <- rbind(tvars1, tvars2, tvars3, tvars4)
 colnames(tvars_all) <- c("timevar", "eventvar")
 tvars_all 
 
-rm(tvars1, tvars2, tvars3)           # Cleanup
+rm(tvars1, tvars2, tvars3, tvars4)           # Cleanup
 
 # Mandatory list `dfAll_info`
 dfAll_Info <- list(
    current_folder = current_folder,
+   datain_script  = "002accord_Bala0724",  # R script that creates data frames 
    datain_basename = datain_basename,
    datain_extension = datain_extension, 
    dfnms_all   = c("accord", "normo", "alb"),  # Data frames created by this script
-   dfnm_sel    = "alb", # One or two data frames selected
+   df_name    = "Place holder", # One or two data frames (training and/or validation) selected
    id          = "MaskID",
    tvars_all   = tvars_all,    # Matrix with  variables' names used to create Surv objects
    time_horizon = Inf, 
-   orig_CCH_data    = TRUE,
+   CCH_data    = TRUE,
    subcohort        = "SUBCO15",      # Variable name (string) for data from C-CH studies
    cch_case         = tvars_all[1,2], # Case variable by default status variable for the first outcome (first row in tvars matrix)
    total_cohort_size = 8000

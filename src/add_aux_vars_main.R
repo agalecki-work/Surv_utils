@@ -1,47 +1,15 @@
-rm(list=ls())
-require(survival)
-
-source("./R/zzz_Rfuns.R") # R functions loaded
-
-data_path <- "./data/"
-
-require(dplyr)
-
-source("./data/accord_Bala0724.R") # Data frame(s) created
-ls()
-
-
-# Subcohort only
-alb_subcohort <- alb %>% filter(SUBCO15 == 1) %>% select(-SUBCO15)
-
-
-#--- Objects available
-#  "cric_imputed" "Rdata_name"
-
-
-#---- Input Info   ---------
-
-df_name <- "alb"
-id  <- "MaskID"
-
-time_horizon <- c(Inf)  # 10 years, if vector with two elements use it to define tm_cut (Inf no truncation)
-
-
-CC_data      <- TRUE         # if FALSE subcohort and ccase ignored 
-subcohort    <- "SUBCO15"    # Variable name (string) for data from C-C studies
-cch_case        <- "PRIMARY"    # Select status (0,1) variable
-
-
-#---- Step 0: Check input info
-update_InfoNms <- c("df_name", "id", "tvars_all","time_horizon", "CC_data", "subcohort", "ccase") 
-update_Info <- lapply(update_InfoNms, FUN= function(nm) eval(parse(text=nm)))
-names(update_Info) <- update_InfoNms 
 
 ntvars <- nrow(tvars_all)
-varNms <- colnames(eval(as.name(df_name)))
-vars_not_found <- setdiff(c(as.vector(tvars_all), id, subcohort),varNms) 
 
-tm_cut <- if (length(time_horizon) ==2) time_horizon[2] else time_horizon[1]
+
+ varNms <- colnames(eval(as.name(df_name)))
+ vars_not_found <- if (CCH_data) {
+       setdiff(c(as.vector(tvars_all), id, subcohort, cch_case),varNms) 
+       } else {
+          setdiff(c(as.vector(tvars_all), id),varNms) 
+
+       }
+ tm_cut <- if (length(time_horizon) ==2) time_horizon[2] else time_horizon[1]
 
 #---- Step 1: Truncate time for all time variables included in `tvars_all` matrix
 
@@ -52,7 +20,7 @@ rngs_beforeS1 <-  sapply(tvars_all[,1], FUN =  function(tmx){
          assign("timex", dtx[, tmx])
          range(timex)
  })
-rngs_beforeS1
+ rngs_beforeS1
 
 tbls_beforeS1 <-  sapply(tvars_all[,2], FUN =  function(evnt){
          dtx <- eval(as.name(df_name))
@@ -122,14 +90,15 @@ tbls_S2
 
 #--- Step 3: Create weight variables for C-C study in df_name : Self, SelfPrentice, BorganI
 
-if (CC_data){ # C-C data only
+if (CCH_data){ # C-C data only
   assign(df_name, 
-      create_cc_weights(as.name(df_name), as.name(subcohort), as.name(subcohort), total_cohort_size),
+      create_cch_weights(as.name(df_name), as.name(subcohort), as.name(subcohort), total_cohort_size),
       envir=.GlobalEnv)
 }
 
 
 # Step 4: Create `init_split` and `foldid` variables.
+
 
 
 

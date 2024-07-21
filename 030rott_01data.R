@@ -1,6 +1,8 @@
-# rm(list = ls())
+# 
+# source("030rott_01data.R")
 
-# source("rott_01data-models.R")
+rm(list = ls())
+
 
 require(dplyr)
 require(survival)
@@ -28,6 +30,8 @@ rotterdam$ryear[rotterdam$rfs == 1 &
                     rotterdam$recur == 0 & 
                     rotterdam$death == 1 & 
                     (rotterdam$rtime < rotterdam$dtime)]/365.25  
+   
+  rotterdam$dyear <- rotterdam$dtime/365.25  # <-  inserted 
 
 # variables used in the analysis
 pgr99 <- quantile(rotterdam$pgr, .99, type = 1) # there is a large outlier of 5000, used type=1 to get same result as in SAS
@@ -106,4 +110,32 @@ rm(temp, rcs3_nodes,nodes99, pgr99, rcs3_pgr)
 
 # data_Info
 
+
+tvars1 <- c("ryear", "rfs")             #  Variables' names used to create Surv objects
+tvars2 <- c("dyear", "death")
+tvars_all <- rbind(tvars1, tvars2)
+colnames(tvars_all) <- c("timevar", "eventvar")
+tvars_all 
+
+colnames(tvars_all) <- c("timevar", "eventvar")
+tvars_all 
+
+rm(tvars1, tvars2)           # Cleanup
+
+# Mandatory list `dfAll_info`
+dfAll_Info <- list(
+   current_folder = getwd(),
+   url            = "https://github.com/danielegiardiello/Prediction_performance_survival/blob/main/01_predsurv_minimal.R",
+   datain_script  = "003rott_01data",  # R script that creates data frames 
+   datain_basename = c("survival::rotterdam", "survival::gbsg"),
+   datain_extension = NULL, 
+   dfnms_all   = c("rott5", "gbsg5"),  # Data frames created by this script
+   df_name    = "Place holder", # One or two data frames (training and/or validation) selected
+   id          = "pid",
+   tvars_all   = tvars_all,    # Matrix with  variables' names used to create Surv objects
+   time_horizon = 5,           # 5 years 
+   CCH_data    = FALSE
+ )
+rm(tvars_all)
+print(dfAll_Info)
 
