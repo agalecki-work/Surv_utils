@@ -1,4 +1,4 @@
-# Called by `add_aux_vars` script
+# Called by `add_aux_vars.R` script
 # Note: df_Info list unpacked
 ntvars <- nrow(tvars_all)
 
@@ -9,9 +9,14 @@ ntvars <- nrow(tvars_all)
        } else {
           setdiff(c(as.vector(tvars_all), id),varNms) 
        }
-tmp_nm <- paste0("vars_not_found",df_no)
+ tmp_nm <- paste0("vars_not_found",df_no)
  assign(tmp_nm, vars_not_found, envir = .GlobalEnv)
- message("--- # Vars not found (blank expected):", eval(as.name(tmp_nm))) 
+ if (length( vars_not_found) ==0){
+    message("--- # Vars not found (blank expected):  ... OK")
+    } else {
+    message("--- # Vars not found (blank expected):", eval(as.name(tmp_nm)))
+ 
+    }
  rm(tmp_nm)
  if (length(vars_not_found) == 0) rm(vars_not_found)
  
@@ -62,7 +67,7 @@ for (i in 1:ntvars){
 
 rngs_S1 <-  sapply(tvars_all[,1], FUN =  function(tmx){
          dtx_temp <- eval(as.name(dfin_name))
-         assign("timex", dtx[, tmx])
+         assign("timex", dtx_temp[, tmx])
          range(timex)
  })
 max_time <- max(rngs_S1[2.])
@@ -71,8 +76,8 @@ message("--- #  Max time _after_ truncation :=", max_time)
 #rngs_S1
 
 tbls_S1 <-  sapply(tvars_all[,2], FUN =  function(evnt){
-         dtx <- eval(as.name(dfin_name))
-         assign("event", dtx[, evnt])
+         dtx_temp <- eval(as.name(dfin_name))
+         assign("event", dtx_temp[, evnt])
          table(event)
  })
 #tbls_S1
@@ -134,8 +139,13 @@ if (CCH_data){ # C-C data only
 
 # Step 4: Create `init_split` and `foldid` variables.
 
-assign(dfin_name, create_initSplit(eval(as.name(dfin_name)), initSplit))
+if (CCH_data){
+  message("---> CCH data `create_cch_folds()` functiom used (not yet). Vars `initSplit`, `foldid` created")
 
+ } else {
+  message("---> SRS data `create_srs_folds()` functiom used. Vars `initSplit`, `foldid` created")
+  assign(dfin_name, create_srs_folds(eval(as.name(dfin_name)), initSplit, nfolds))
+}
 
 
 

@@ -39,9 +39,9 @@ tvars4 <- c("YRS_CASE50", "case50_jun")          # Competing risk (if any) inclu
 
 tvars_all <- rbind(tvars1, tvars2, tvars3, tvars4)
 colnames(tvars_all) <- c("timevar", "eventvar")
+rownames(tvars_all) <- tvars_all[ , 1]
 tvars_all 
 
-rm(tvars1, tvars2, tvars3, tvars4)           # Cleanup
 
 # Mandatory list `dfAll_info`
 dfAll_Info <- list(
@@ -54,12 +54,30 @@ dfAll_Info <- list(
    CCH_data    = TRUE,
    id          = "MaskID",
    tvars_all   = tvars_all,    # Matrix with  variables' names used to create Surv objects
-   cfilter      = "UACR_gp1 == 2",     # alb dataset
+   cfilter     = "UACR_gp1 == 2",     # alb dataset
+   cfilter_comment = "Albuminuria",
    time_horizon = Inf, 
    initSplit    = 0.8,
-   subcohort    = "SUBCO15",      # Variable name (string) for data from C-CH studies
-   cch_case     = tvars_all[1,2], # Case variable by default status variable for the first outcome (first row in tvars matrix)
-   total_cohort_size = 8000
+   nfolds       = 10
 )
+
+## df_CCH_info
+
+tnms_all <- rownames(tvars_all)
+ti_select   <- c(2,3)             # Select one or two tnames (second tname, if present treated as competing risk)  
+CCH_tvars <- tvars_all[ti_select,]
+CCH_tvars
+
+cch_case <-  tvars_all[1,2]      # Case variable by default status variable for the first outcome (first row in tvars matrix)
+
+df_CCH_info <- list(
+   CCH_tvars    = CCH_tvars       # One or two rows from tvars matrix
+   subcohort    = "SUBCO15",      # Variable name (string) for data from C-CH studies
+   cch_case     = cch_case,
+   total_cohort_size = 8000
+
+)
+rm(tvars1, tvars2, tvars3, tvars4)           # Cleanup
+
 rm(current_folder, datain_basename, datain_extension, tvars_all)
 # print(dfAll_Info)

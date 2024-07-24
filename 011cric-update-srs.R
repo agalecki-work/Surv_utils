@@ -14,7 +14,7 @@ message("--- print(ls1)  # Objects created by data script")
 
 #---- Input Info updated   ---------
 df_Info     <- dfAll_Info
-df_Info$time_horizon <- c(10, 9.99)  # 10 years, Inf no truncation
+df_Info$time_horizon <- c(10, 9.99)  # 10 years, Note: Inf no truncation
 df_Info$cfilter <- "SEX==1"       # Filter (optional)
 message("--- print(df_Info)")
 ## print(df_Info)
