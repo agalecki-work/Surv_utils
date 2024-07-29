@@ -83,8 +83,13 @@ tbls_S1 <-  sapply(tvars_all[,2], FUN =  function(evnt){
 #tbls_S1
 rm(max_time, rngs_S1, tbls_S1, rngs_beforeS1, tbls_beforeS1) 
 
+if (!CCH_data){
+   keep_Allvars <- c(keep_Allvars, as.vector(tvars_all))
+   } else {
+   keep_Allvars <- c(keep_Allvars, subcohort, cch_case, as.vector(CCH_tvars))
+   }
 
-#--- Step 2: Create competing risk variables (cr_*)
+#---??? Step 2: Create competing risk variables (cr_*)
 
 if (ntvars > 1){
  message("---> `cr` variables for CR analysis created (ntvars :=", ntvars, ")")
@@ -94,7 +99,7 @@ if (ntvars > 1){
  for (i in 1:ncrvars){
   dtx_temp <- eval(as.name(dfin_name)) # df updated 
   assign(dfin_name, 
-          create_cr_vars(dtx_temp, tvars_all[i,], tvars_all[ncrvars+1 ,] ), 
+          create_cr_vars2(dtx_temp, tvars_all[i,], tvars_all[ncrvars+1 ,] ), 
           envir=.GlobalEnv)
  }
 
@@ -125,6 +130,8 @@ if (ntvars > 1){
  message("---> `cr` variables for competing risk analysis _not_ created (because ntvars :=", ntvars, ")")
 
 }
+if (!CCH_data) keep_Allvars <- c(keep_Allvars, as.vector(cr_mtx))
+
 
 #--- Step 3: Create weight variables for data from C-CH study in dfin_name : Self, SelfPrentice, BorganI
 
@@ -133,11 +140,14 @@ if (CCH_data){ # C-C data only
   assign(dfin_name, 
       create_cch_weights(as.name(dfin_name), as.name(subcohort), as.name(subcohort), total_cohort_size),
       envir=.GlobalEnv)
+  keep_Allvars <- c(keep_Allvars,"w_Self","w_SelfPrentice", "w_BorganI") 
 } else  message("---> CCH_data is ", CCH_data, " => CCH weight variables _not_ created")
  
 
 
 # Step 4: Create `init_split` and `foldid` variables.
+
+if (length(initSplit) !=0){
 
 if (CCH_data){
   message("---> CCH data `create_cch_folds()` functiom used (not yet). Vars `initSplit`, `foldid` created")
@@ -146,9 +156,12 @@ if (CCH_data){
   message("---> SRS data `create_srs_folds()` functiom used. Vars `initSplit`, `foldid` created")
   assign(dfin_name, create_srs_folds(eval(as.name(dfin_name)), initSplit, nfolds))
 }
+  keep_Allvars <- c(keep_Allvars, "init_split", "foldid") 
+
+}
 
 
-
+keep_Allvars <- unique(c(keep_Allvars, df_Info$keep_vars))
 
 
 

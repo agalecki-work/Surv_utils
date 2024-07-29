@@ -8,20 +8,20 @@
   
  data <- data  %>%
   mutate(
-    Self = case_when(
+    w_Self = case_when(
         subcohort == 1 ~ 1,
         subcohort == 0 & case == 1 ~ n_total / n_subcohort,
         TRUE ~ 0 # Non-cases not in the subcohort should not have weights assigned
         ),
   
-    SelfPrentice = case_when(
+    w_SelfPrentice = case_when(
       subcohort == 1 & case == 0 ~ 1,
       subcohort == 1 & case == 1 ~ 1 + n_subcohort / n_non_cases_overall,
       subcohort == 0 & case == 1 ~ n_subcohort / n_non_cases_overall,
       TRUE ~ 0 # Cases that are not part of the subcohort have a calculated weight
     ),
     
-     BorganI = case_when(
+    w_BorganI = case_when(
         subcohort == 1 ~ 1,
         subcohort == 0 & case == 1 ~ n_total / n_subcohort,
         TRUE ~ 0  # Non-cases outside of the subcohort typically not assigned weights
