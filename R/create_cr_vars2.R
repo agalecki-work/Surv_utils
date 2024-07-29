@@ -4,10 +4,10 @@ create_cr_vars2 <- function(data, tvars, dvars, outvars = paste0("cr_", tvars)){
   tv1 <- tvars[1]
   tv2 <- dvars[1]
   sv1 <- tvars[2]
-  sv2 <-dvars[2]
-  T1  <- data{, tv1]
+  sv2 <- dvars[2]
+  T1  <- data[, tv1]
   T2  <- data[, tv2]
-  S1  <- data{, sv1]
+  S1  <- data[, sv1]
   S2  <- data[, sv2]
 
   # Step 1: Construct follow-up time T

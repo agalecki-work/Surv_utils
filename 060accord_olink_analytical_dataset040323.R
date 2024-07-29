@@ -46,9 +46,9 @@ CCN_cvars <- paste("CCN", 1:7, sep="")
 cvars0 <- c("BPTRIAL", "GLYINT", "BPINT", "strtm")
 cvars1 <- c("BASE_UACR", "BASE_GFR", "HBA1C") 
 cvars2    <- c("FEMALE","AGE")
-keep_cvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep 
+keep_cvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep (DO NOT include `subcohort`, `cch_case` variables) 
 
-#--- tvars_all matrix with tow columns: `timevar`, `eventvar`
+#--- tvars_all matrix with two columns: `timevar`, `eventvar`
 tvars1 <- c("YRS_PRIMARY", "PRIMARY")             #  Pairs of variables used to create Surv objects
 tvars2 <- c("YRS_CASE40_JUN", "CASE40_JUNE")
 tvars3 <- c("YRS_DECLINE40_PLUS", "DECLINE40_PLUS")
@@ -67,11 +67,11 @@ df_initInfo <- list(
    datain_extension = datain_extension,                            
    dfnms_all        = "accord",                                    # Data frames created by this script
    dfin1_name       = "accord",                                    # Data frame selected
-   dfin2_name       = character0(),                                # External data frame
+   dfin2_name       = character(0),                                # Data frame for external validation
    keep_vars        = keep_cvars,
    CCH_data         = TRUE,                                        # Creates CCH data(`df_CCH_info` list is needed
    id               = "MASKID",
-   tvars_all        = tvars_all,    # Matrix with pairs of variables used to create Surv() objects
+   tvars_all        = tvars_all,    # Matrix with pairs of variable names used to create Surv() objects
    cfilter          = character(0), # Filter expression 
    cfilter_comment  = "All data used",
    time_horizon     = Inf,         # Inf -> no time truncation , Second element (if present) will be used as `tm_cut`
@@ -112,7 +112,7 @@ dfCCH_initInfo <- list(
    total_cohort_size = 7667       # 
 )
 
-keep_objects <- c("accord", "df_initInfo", "dfCCH_initInfo") #Mandatory to keep `df_initInfo`, `dfCCH_initInfo`
+keep_objects <- c("accord", "df_initInfo", "dfCCH_initInfo") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
 
 # Cleanup (No changes below) 
 ls_objects <- ls()
