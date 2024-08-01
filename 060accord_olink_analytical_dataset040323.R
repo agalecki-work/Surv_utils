@@ -1,4 +1,4 @@
-## source("060accord_olink_analytical_dataset040323.R")
+## source("060accord_olink_analytical_dataset040323.R")  # This file
 
 rm(list =ls())
 library(dplyr)
@@ -66,7 +66,7 @@ df_initInfo <- list(
    datain_basename  = datain_basename,                             # External file with dataset (without extension)
    datain_extension = datain_extension,                            
    dfnms_all        = "accord",                                    # Data frames created by this script
-   dfin1_name       = "accord",                                    # Data frame selected
+   dfin1_name       = c("accord","accord_updated"),                # Data frame names (original, updated)
    dfin2_name       = character(0),                                # Data frame for external validation
    keep_vars        = keep_cvars,
    CCH_data         = TRUE,                                        # Creates CCH data(`df_CCH_info` list is needed
@@ -104,7 +104,7 @@ df_initInfo <- list(
 CCHtm_select   <- c("YRS_PRIMARY", "FU_TM_ACCORDION")  # Select one or two tnames from `tvars_all` (second tname, if present treated as competing risk)  
 CCH_tvars <- tvars_all[CCHtm_select,]
 
-# Mandatory list for CCH data
+# Mandatory list for CCH data (CCH_data is TRUE)
 dfCCH_initInfo <- list(
    CCH_tvars    = CCH_tvars,      # One or two rows extracted from `tvars_all` matrix
    subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from C-CH studies

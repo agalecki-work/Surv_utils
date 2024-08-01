@@ -29,7 +29,7 @@ create_cr_vars2 <- function(data, tvars, dvars, outvars = paste0("cr_", tvars)){
   both_events <- (T1 == T2)
   S[both_events & S1 == 1] <- 1
   S[both_events & S1 != 1 & S2 == 1] <- 2
-  S <-   factor(event, 0:2, labels=c("censor", tvars[2], dvars[2]))
+  S <-   factor(S, 0:2, labels=c("censor", tvars[2], dvars[2]))
   data[, outvars[1]] <- T
   data[, outvars[2]] <- S
   return(data)

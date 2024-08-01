@@ -15,6 +15,7 @@ df_Info     <- df_initInfo
 df_Info$cfilter <- "FEMALE == 1"
 df_Info$cfilter_comment <- "Females only"
 df_Info$time_horizon <- 10  # 10 years, if vector with two elements use second element to define tm_cut (Inf no truncation)
+df_Info$dfin1_name[2] <- "accord_cch" # original and new name
 
 # print(df_Info)
 

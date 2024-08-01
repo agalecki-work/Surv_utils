@@ -1,38 +1,12 @@
 #======  Update `dfin_name` data frame with auxilary variables
 source("./R/zzz_Rfuns.R")    # R functions loaded
+if (is.null(df_Info$CCH_data)) df_Info$CCH_data <- FALSE
 
-#--- update default values
-
-# NULL -> charcter(0) or numeric(0)
-if (is.null(df_Info$CCH_data))  df_Info$CCH_data <- FALSE
-if (is.null(df_Info$keep_vars)) df_Info$keep_vars <- character(0)
-if (is.null(df_Info$cfilter)) df_Info$cfilter <- character(0)
-if (is.null(df_Info$seed)) df_Info$seed <- numeric(0)
-if (is.null(df_Info$initSplit)) df_Info$initSplit <- numeric(0)
-
-
-# Populate first component
-if (length(df_Info$keep_vars)== 0) df_Info$keep_vars <- colnames(eval(as.name(df_Info$dfin1_name)))
-
-keep_Allvars <- df_Info$id  
-
-
-# Populate second component (if empty)
-
-if (length(df_Info$CCH_data) == 1) df_Info$CCH_data <- c(df_Info$CCH_data, FALSE)
-if (length(df_Info$cfilter) == 1) df_Info$cfilter <- c(df_Info$cfilter, df_Info$cfilter)
-if (length(df_Info$time_horizon) == 1) df_Info$time_horizon <- c(df_Info$time_horizon, df_Info$time_horizon)
-
-if (length(df_Info$initSplit) == 1) df_Info$initSplit  <- c(df_Info$initSplit , numeric(0))
-if (length(df_Info$nfolds) == 1) df_Info$nfolds  <- c(df_Info$nfolds , numeric(0))
-
-
-# Unpack `df_Info` list
-
+keep_Allvars <- df_Info$id 
 
 #---- Step 0: Check input info
 
-# Make sure no new components created in `df_Info` list
+# Make sure no new components created in `df_Info` list compared to `df_initInfo`
  txt1 <-  list_added_components (df_initInfo, df_Info)
  message(paste0("--- # df_initInfo vs  df_Info. ", txt1, "     ... error?"))
 
@@ -54,21 +28,27 @@ if (CCH_data){
  
 
 
-tm_cut <- time_horizon[2]
+tm_cut <- if (length(time_horizon) == 2) time_horizon[2] else time_horizon[1]
 
+common_vars <- intersect(keep_vars, colnames(eval(as.name(dfin1_name))))
 
-## Process dfin1_nm
+if (length(dfin2_name) !=0) common_vars <- intersect(common_vars, colnames(eval(as.name(dfin2_name)))) 
+
+## Process dfin1_name[1] original df
 
  df_no   <- 1
- dfin_name <- dfin1_nm
- message("=====> # data frame `", dfin1_nm, "` modified -----")
+ dfin_name <- dfin1_name[1]
+ dfnew_name <-  if (length(dfin1_name) == 2)  dfin1_name[2] else character(0)
+# message("=====> # data frame `", dfin_name, "`-> `", dfnew_name,  "` modified -----")
  source("./src/add_aux_vars_main.R")
 
 
-if (length(dfin2_nm) !=0){
+if (length(dfin2_name) !=0){
   df_no <-2
-  dfin_name <- dfin2_nm
-  message("=====>#  data frame `", dfin2_nm, "` processed -----")
+  dfin_name <- dfin2_name[1]
+  dfnew_name <- if (length(dfin2_name) == 2) dfin2_name[2] else character(0)
+
+  #message("=====>#  data frame `", dfin2_name, "` ->",  processed -----")
 
  source("./src/add_aux_vars_main.R")
 }
