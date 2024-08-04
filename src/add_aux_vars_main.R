@@ -165,8 +165,6 @@ if (ntvarsx > 1){
 
 } # if (ntvarsx > 1)
 
-
-
 #--- Step 3: Create weight variables for data from C-CH study in dfin_name : Self, SelfPrentice, BorganI
 
 message("---> Step 3: Create weight variables for data from C-CH study ---")
@@ -188,7 +186,7 @@ if (length(initSplit) !=0 && df_no ==1){
 
 if (CCH_data){
   message("--- CCH data `create_cch_folds()` functiom used (not yet). Vars `initSplit`, `foldid` created")
-
+  dfin_datax <- create_cch_folds(dfin_datax, as.name(subcohort), as.name(cch_case), initSplit, nfolds)
  } else {
   message("--- SRS data `create_srs_folds()` functiom used. Vars `initSplit`, `foldid` created")
   # assign(dfin_name, create_srs_folds(dfin_datax, initSplit, nfolds))
@@ -208,7 +206,7 @@ if (length(dfnew_name) !=0){
  tmp_df <- dfin_datax %>% select(all_of(keep_Allvars)) 
   assign(dfnew_name, tmp_df, envir =.GlobalEnv)
   rm(dfin_datax)
-  message("----> df `", dfnew_name, "` created  -----")
+  message("----> New df `", dfnew_name, "` created  -----")
 
 }
  

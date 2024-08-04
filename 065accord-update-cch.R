@@ -1,5 +1,5 @@
 
-#  source("062accord-update-cch.R") # This file
+#  source("065accord-update-cch.R") # This file
 
 rm(list= ls())
 source("060accord_olink_analytical_dataset040323.R") # Script that generates dataframes
@@ -25,3 +25,10 @@ dfCCH_Info <- dfCCH_initInfo
 
 source("./src/add_aux_vars.R")
 
+keep_objects <- c("accord_cch", "df_Info", "dfCCH_Info","tvars_mtx"  )
+
+# Cleanup (No changes below) 
+ls_objects <- ls()
+rm_objects  <- c(setdiff(ls_objects, keep_objects), "ls_objects")
+#rm(list = rm_objects)
+rm(rm_objects)
