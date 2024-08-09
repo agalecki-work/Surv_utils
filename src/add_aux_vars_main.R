@@ -10,21 +10,14 @@ dfdim_txt  <- paste(dim(dfin_datax), collapse =", ")
 message("---  Dim (nrows, ncols) in original data: ", dfdim_txt) 
 
 #----- prep steps
+tvars_mtx <- tvars_select
+message(paste0("---> Surv vars for the event of interest: ", tvars_mtx[1,1], ", ",  tvars_mtx[1,2]))
 
-if (CCH_data){ 
-  tvars_mtx <- CCH_tvars
-  ntvarsx <- nrow(CCH_tvars)
-  message(paste0("---> CCH_data is TRUE. Surv vars for the event of interest: ", tvars_mtx[1,1], ", ",  tvars_mtx[1,2]))
-} else {
-  tvars_mtx <- tvars_all
-  ntvarsx <- nrow(tvars_all)
-  dfCCH_Info <- NULL
-  message(paste0("---> CCH_data is FALSE. Number of time events (Surv objects) defined (excluding competing risk) :", ntvarsx -1))
-}
+ntvarsx <- nrow(tvars_mtx)
 
-if (ntvarsx == 1){
-  message("--- Competing risk variable not defined")
-  } else message("--- Competing risk: Surv vars:", tvars_mtx[ntvarsx, 1], ",", tvars_mtx[ntvarsx, 2])
+txt0  <- if (ntvarsx ==1) "Competing risk NOT defined" else paste0("Competing risk: ",  tvars_mtx[2,2])
+message(paste0("---> ", txt0))
+
 
 # --- Checking whether variables are present
  varNms <- colnames(dfin_datax)
@@ -63,7 +56,7 @@ if (length(cfilter) > 0){
 rm(dfdim)
 
 
-# ---- Step 1a: 
+# ---- Step 1a: Filter out non-cases outside of subcohort
 if (CCH_data){
   cch_cstmnt <- paste0("dfin_datax %>% filter(",  subcohort, "|", cch_case, ")")
   dfin_datax <- eval(parse (text=cch_cstmnt))
@@ -125,12 +118,42 @@ if (!CCH_data){
    }
 # print(keep_Allvars)
 
-#--- Step 2: Create competing risk variables (cr_*)
 
+#--- Step 2: Create weight variables for data from C-CH study in dfin_name : Self, SelfPrentice, BorganI
+
+message("---> Step 2: Create weight variables for data from C-CH study ---")
+if (CCH_data){ # CCH data only
+  message("--- CCH_data is ", CCH_data, " => CCH weight variables created")
+ # assign(dfin_name, 
+ #     create_cch_weights(as.name(dfin_name), as.name(subcohort), as.name(cch_case), total_cohort_size),
+ #     envir=.GlobalEnv)
+ dfin_datax <-  create_cch_weights(dfin_datax, as.name(subcohort), as.name(cch_case), total_cohort_size)
+ keep_Allvars <- c(keep_Allvars,"w_Self","w_SelfPrentice", "w_BorganI") 
+} else  message("--- CCH_data is ", CCH_data, " => CCH weight variables _not_ created")
+ 
+
+# Step 3: Create `initSplit` and `foldid` variables.
+message("---> Step 3: Create `initSplit` and `foldid` variables ---")
+
+if (length(initSplit) !=0 && df_no ==1){
+
+if (CCH_data){
+  message("--- CCH data `create_cch_folds()` functiom used (not yet). Vars `initSplit`, `foldid` created")
+  dfin_datax <- create_cch_folds(dfin_datax, as.name(subcohort), as.name(cch_case), initSplit, nfolds)
+ } else {
+  message("--- SRS data `create_srs_folds()` functiom used. Vars `initSplit`, `foldid` created")
+  # assign(dfin_name, create_srs_folds(dfin_datax, initSplit, nfolds))
+ dfin_datax <- create_srs_folds(dfin_datax, initSplit, nfolds)
+}
+  keep_Allvars <- c(keep_Allvars, "initSplit", "foldid") 
+
+}
+
+#--- Step 4a: Create competing risk variables (cr_*) in `dfin_datax` dataframe
 
 if (ntvarsx > 1){
  
- message("--- STEP2.`cr` variables for CR analysis created (ntvarsx :=", ntvarsx, ")")
+ message("--- STEP4a.`cr` variables for CR analysis created (ntvarsx :=", ntvarsx, ")")
 
  ncrvarsx <- ntvarsx-1  # Last row is competing risk
 
@@ -165,36 +188,23 @@ if (ntvarsx > 1){
 
 } # if (ntvarsx > 1)
 
-#--- Step 3: Create weight variables for data from C-CH study in dfin_name : Self, SelfPrentice, BorganI
+#--- Step 4b: Create FG data using competing risk variables (cr_*) in `dfin_datax` dataframe
 
-message("---> Step 3: Create weight variables for data from C-CH study ---")
-if (CCH_data){ # C-C data only
-  message("--- CCH_data is ", CCH_data, " => CCH weight variables created")
- # assign(dfin_name, 
- #     create_cch_weights(as.name(dfin_name), as.name(subcohort), as.name(cch_case), total_cohort_size),
- #     envir=.GlobalEnv)
- dfin_datax <-  create_cch_weights(dfin_datax, as.name(subcohort), as.name(cch_case), total_cohort_size)
- keep_Allvars <- c(keep_Allvars,"w_Self","w_SelfPrentice", "w_BorganI") 
-} else  message("--- CCH_data is ", CCH_data, " => CCH weight variables _not_ created")
+
+if (ntvarsx > 1){
  
+ message("--- STEP4b. Create FG data using `cr` variables (ntvarsx :=", ntvarsx, ")")
+ csurv <- paste0("Surv(", cr_mtx[1, "cr_time"], ",", cr_mtx[1, "cr_event"], ")") # Surv object created
+ cform <- paste0(csurv, "~ .")
+ 
+ argsx <- list(formula =as.formula(cform), data = dfin_datax,
+    etype = tvars_mtx[1,2], id =as.name(id))
+ FG_df <- do.call("finegray", argsx)
+ assign(FG_dfname, FG_df, envir =.GlobalEnv)  
+ 
+} # (ntvarsx > 1)
 
 
-# Step 4: Create `initSplit` and `foldid` variables.
-message("---> Step 4: Create `initSplit` and `foldid` variables ---")
-
-if (length(initSplit) !=0 && df_no ==1){
-
-if (CCH_data){
-  message("--- CCH data `create_cch_folds()` functiom used (not yet). Vars `initSplit`, `foldid` created")
-  dfin_datax <- create_cch_folds(dfin_datax, as.name(subcohort), as.name(cch_case), initSplit, nfolds)
- } else {
-  message("--- SRS data `create_srs_folds()` functiom used. Vars `initSplit`, `foldid` created")
-  # assign(dfin_name, create_srs_folds(dfin_datax, initSplit, nfolds))
- dfin_datax <- create_srs_folds(dfin_datax, initSplit, nfolds)
-}
-  keep_Allvars <- c(keep_Allvars, "initSplit", "foldid") 
-
-}
 
 # ----- FINISH
 
@@ -205,7 +215,7 @@ keep_Allvars <- unique(c(keep_Allvars, common_vars))
 if (length(dfnew_name) !=0){
  tmp_df <- dfin_datax %>% select(all_of(keep_Allvars)) 
   assign(dfnew_name, tmp_df, envir =.GlobalEnv)
-  rm(dfin_datax)
+  #rm(dfin_datax)
   message("----> New df `", dfnew_name, "` created  -----")
 
 }

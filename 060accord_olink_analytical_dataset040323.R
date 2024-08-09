@@ -38,26 +38,61 @@ accord <- accord %>%
 
 #----  Prepare info (all variables to be included in data)
 
-# Prepare `keep_cvars` vector (include weight and filter vars)
+# Prepare `keep_cvars` vector (include weight and filter vars, if any)
 nx <-21
 BM_cvars  <- paste("BM",1:nx, sep="")
 BMQ_cvars <- paste("BMQ",1:nx, sep="")
 CCN_cvars <- paste("CCN", 1:7, sep="")
-cvars0 <- c("BPTRIAL", "GLYINT", "BPINT", "strtm")
+cvars0 <- c("BPTRIAL", "GLYINT", "BPINT", "strtm", "SUBCO15")
 cvars1 <- c("BASE_UACR", "BASE_GFR", "HBA1C") 
 cvars2    <- c("FEMALE","AGE")
-keep_cvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep (DO NOT include `subcohort`, `cch_case` variables) 
+keep_cxvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep (DO NOT include time variables, `subcohort`, `cch_case` variables) 
 
-#--- tvars_all matrix with two columns: `timevar`, `eventvar`
-tvars1 <- c("YRS_PRIMARY", "PRIMARY")             #  Pairs of variables used to create Surv objects
-tvars2 <- c("YRS_CASE40_JUN", "CASE40_JUNE")
-tvars3 <- c("YRS_DECLINE40_PLUS", "DECLINE40_PLUS")
-tvars4 <- c("FU_TM_ACCORDION", "TM_ACCORDION")
-tvars_all <- rbind(tvars1, tvars2, tvars3, tvars4)
+#--- `tvars?` lists 
+tvar1 <- list(
+    tvars  = c("YRS_PRIMARY", "PRIMARY"),  #  Pair of variables used to create Surv objects for Cox model
+    tlabels = c("Time to primary outcome or censoring (years)", "Primary outcome (ESKD/Dialysis, 0=NO, 1=YES)"),
+    svalues = 0:1,                         # event status variable values
+    slevels = c("censored", "ESKD/Dialysis"))
 
-colnames(tvars_all) <- c("timevar", "eventvar")
-rownames(tvars_all) <- tvars_all[ , 1]  # Use first column of `tvars` to assign rownames
+tvar2 <- list(
+    tvars  = c("YRS_CASE40_JUN", "CASE40_JUNE"),  #  Pair of variables used to create Surv objects for Cox model
+    tlabels = c("Time to secondary outcome (yrs)", "Secondary outcome (ESKD/Dialysis/eGFR)"),
+    svalues = 0:1,                         # event status variable values
+    slevels = c("censored", "ESKD/Dialysis/eGFR"))
+    
+tvar3 <- list(
+    tvars  = c("YRS_DECLINE40_PLUS", "DECLINE40_PLUS"),  #  Pair of variables used to create Surv objects for Cox model
+    tlabels = c("Time to 40pct eGFR decline event or cens. (yrs)", "40pct eGFR decline"),
+    svalues = 0:1,                         # event status variable values
+    slevels = c("censored", "40pct eGFR decline"))
+    
+tvar4 <- list(
+    tvars  = c("FU_TM_ACCORDION", "TM_ACCORDION"),  #  Pair of variables used to create Surv objects for Cox model
+    tlabels = c("Time to death from any cause (years)", "Death from any cause"),
+    svalues = 0:1,                         # event status variable values
+    slevels = c("censored", "Death from any cause"))
 
+tvar5 <- list(
+    tvars  = c("YRS_PRIMARY", "STATUS_PRI"),  #  Pair of variables used to create Surv objects for competing risk model
+    tlabels = c("Time to primary outcome (ESKD/Dialysis (years)", "Status for primary outcome"),
+    svalues = 0:2,                         # event status variable values
+    slevels = c("censored", "Primary event", "Death before primary outcome"))
+
+tvar6 <- list(
+    tvars  = c("YRS_CASE40_JUN", "STATUS_SEC"),  #  Pair of variables used to create Surv objects for competing risk model
+    tlabels = c("Time to secondary outcome (yrs)", "Status for secondary outcome"),
+    svalues = 0:2,                         # event status variable values
+    slevels = c("censored", "Primary event", "Death before primary outcome"))
+   
+
+#   Select one tvars list !!!
+tvar_select <- tvar5 # 
+
+
+# Fine-Gray name (ignored if `tvar_select` has one row, i.e. no competing risk)
+
+FG_dfname <- paste0("accord_FG.", tvar_select$tvars[1])
 
 # Mandatory list `df_initInfo`
 df_initInfo <- list(
@@ -66,12 +101,13 @@ df_initInfo <- list(
    datain_basename  = datain_basename,                             # External file with dataset (without extension)
    datain_extension = datain_extension,                            
    dfnms_all        = "accord",                                    # Data frames created by this script
-   dfin1_name       = c("accord","accord_updated"),                # Data frame names (original, updated)
-   dfin2_name       = character(0),                                # Data frame for external validation
-   keep_vars        = keep_cvars,
+   dfin_name        = c("accord","accord_updated"),                # Data frame names (original, updated)
+   keep_xvars       = keep_cxvars,
+   CR_tvar          = length(tvar_select$svalues) ==3,             # TRUE/FALSE indicates whether competing risks
    CCH_data         = TRUE,                                        # Creates CCH data(`df_CCH_info` list is needed
    id               = "MASKID",
-   tvars_all        = tvars_all,    # Matrix with pairs of variable names used to create Surv() objects
+   tvar_select      = tvar_select,                                 # Select `tvars` vector
+   FG_dfname        = FG_dfname,
    cfilter          = character(0), # Filter expression 
    cfilter_comment  = "All data used",
    time_horizon     = Inf,         # Inf -> no time truncation , Second element (if present) will be used as `tm_cut`
@@ -96,23 +132,20 @@ df_initInfo <- list(
 #>   0    528 116    0 Depending on CCH_tvars exclude n=528 or 528 + 151 subjects
 #>   1    151  64    0 n=215 cases outside of subcohort
 
-
-#--- Select (one of two) rows from `tvars_all` matrix for the analysis
-#  one row defines Surv() object for the  primary event of interest
-#  second row (if present) defines Surv() object for competing risk event
-
-CCHtm_select   <- c("YRS_PRIMARY", "FU_TM_ACCORDION")  # Select one or two tnames from `tvars_all` (second tname, if present treated as competing risk)  
-CCH_tvars <- tvars_all[CCHtm_select,]
+# CCH_case <- if(length(tvar_select$svalues) ==2) tvar_select$tvar[2] else paste0(tvar_select$tvar[2], "_CCHcase") 
 
 # Mandatory list for CCH data (CCH_data is TRUE)
 dfCCH_initInfo <- list(
-   CCH_tvars    = CCH_tvars,      # One or two rows extracted from `tvars_all` matrix
-   subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from C-CH studies
-   cch_case     = CCH_tvars[1,2], # Case variable by default status variable for the first outcome (first row in tvars matrix)
-   total_cohort_size = 7667       # 
+   subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from CCH studies
+   cch_case     = "CCH_ucase"     # Name of <case variable> (string) to be created. Depends on status variable
 )
 
+## accord[, CCH_case] <- eval(as.name(CCH_case)) # cch_case variable created
+
 keep_objects <- c("accord", "df_initInfo", "dfCCH_initInfo") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
+
+# print(df_initInfo)
+# print(dfCCH_initInfo)
 
 # Cleanup (No changes below) 
 ls_objects <- ls()
