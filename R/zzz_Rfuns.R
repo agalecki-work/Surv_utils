@@ -7,7 +7,11 @@ funNms <- c(
   "create_cch_folds", 
   "list_added_components",
   "create_cch_weights",
-  "check1_crdata"       # Check for mutually exclusive events
+  "check1_crdata",       # Check for mutually exclusive events
+  "create_spline_basis",
+  "expand_data_finegray",
+  "split_data_intervals",
+  "create_time_dependent_covariates2"
 )
 
 funNmsR  <- paste0(funNms,".R") 

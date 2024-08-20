@@ -1,4 +1,4 @@
-SurvSplit2_truncate <- function(df, tvars, time_horizon, postfix = character(0)){
+SurvSplit2_truncate <- function(df, tvars, tm_horizon, postfix = "_"){
  
  #csurv <- paste0("Surv(", tvars[1], ",",  tvars[2], ")") # Surv(time, status)
  
@@ -6,15 +6,13 @@ SurvSplit2_truncate <- function(df, tvars, time_horizon, postfix = character(0))
  
  nm1 <- paste0(tvars[1], postfix)
  nm2 <- paste0(tvars[2], postfix)
-
- df[, nm1]  <- pmin  (df[, tvars[1]], time_horizon)
- df[, nm2]  <- ifelse(df[, tvars[1]] > time_horizon, 0, df[, tvars[2]])
-
- # Create the original and adjusted Surv objects
- # df[, nm1] <- with(df, Surv(eval(as.name(tvars[1])), eval(as.name(tvars[2])) , type = "mstate"))
- # df[, nm2] <- with(df, Surv(adjusted_time, adjusted_status, type = "mstate" ))
+  #message("1")
+  df[, nm1]  <- pmin(pull(df[, tvars[1]]), tm_horizon)
+  #message("2")
+  df[, nm2]  <- ifelse(pull(df[, tvars[1]]) > tm_horizon, 0, pull(df[, tvars[2]]))
+  #message("3")
 return(df)
 }
 
-# SurvSplit2_truncate (dfin_datax, tvars_vec, tm_cut)
+# SurvSplit2_truncate (df =dfin_datax, tvars =tvars_vec, tm_horizon= tm_cut)
 

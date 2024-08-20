@@ -3,34 +3,65 @@
 
 rm(list= ls())
 
-#--- Create 'initInfo' lists and 'dfin_name' dataframe
+#--- Create mandatory `df_initInfo` list and `work_data' dataframe
 source("060accord_olink_analytical_dataset040323.R") 
-require(survival)
 #print(df_initInfo)
-#print(dfCCH_initInfo)
 
 
-#---- Create `df_info` list by modifying  `df_initInfo`  ---------
-#-- Notes: 
+#---- Create `Project_Info` list by modifying  `Project_initInfo`  ---------
+print(Project_initInfo)
 
-#  1. `CCH_data` is FALSE: CCH data will not be created
-#  3. `cfilter` Subcohort in  `dfin_name` selected
-#  4. `dfin_name` has two elements.  
+prj <- Project_initInfo              # Copy `Project_initInfo` list
+#prj$CCH_Info <- NULL                # CCH info ignored
+prj$dfin_Info$cfilter  <- "FEMALE == 1"  # Subset of Subcohort
+prj$dfin_Info$cfilter_comment    <- "Females only"
+prj$dfin_Info$time_horizon <- c(10, 9.99)  # if vector with two elements use second element to define tm_cut (Inf no truncation)
+Project_Info <- prj
 
-df_Info     <- df_initInfo         # Copy initInfo list
+#==== Typically no changes, below
 
-df_Info$cfilter <- "SUBCO15 == 1 & FEMALE ==1"  # Subset of Subcohort
+source("./src/process_work_data.R")
 
-df_Info$CCH_data    <- TRUE #  NULL    #!!!!
 
-df_Info$dfin_name[2] <- "accord_subcohort" #  new name
-df_Info$cfilter_comment <- "Females in subcohort only"
-df_Info$time_horizon <- c(5, 4.99)  # 10 years, if vector with two elements use second element to define tm_cut (Inf no truncation)
+train_data <- work_data %>% filter(initSplit == 1)
+val_data  <- work_data %>% filter(initSplit == 0)
 
-# print(df_Info)
+## if (!is.null(val_data))
 
-# dfCCH_Info  will be set to NULL, because CCH_data = FALSE 
-source("./src/add_aux_vars.R")
+mod_cxterms1 <- c("BM1", "log(BM1)")
+
+BM1_train_spline3 <- ns(train_data$BM1,  df =3) #  df = No of knots +  degrees
+attributes(BM1_train_spline3)
+
+
+BM1_train_spline3_knots  <- attr(BM1_train_spline3, "knots") # 
+
+BM1_val_spline3 <- ns(val_data$BM1, knots = BM1_train_spline3_knots)
+
+if (length(tv_slevels >= 3)){
+# Expand Data Using finegray for event type 1
+  fg_data <- expand_data_finegray(train_data, tvar_Info = tvar_Info) # , etype = 1)
+}
+
+
+
+form1 <- formula(. ~  bs(BM1, df=3) + bs(BM2, df=3))
+
+
+
+
+mod1_mtx <- model.matrix(form1, data = train_data)
+
+BM1_spline <-  bs(train_data$BM1, df =3)
+
+
+print("*end")
+
+
+#initSplit_select <- 1  #  
+#source("./src/add_aux_vars.R")
+
+
 
 keep_objects <- c("accord", "accord_subcohort", "df_Info")
 # print(df_Info)

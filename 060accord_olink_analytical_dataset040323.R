@@ -1,7 +1,8 @@
 ## source("060accord_olink_analytical_dataset040323.R")  # This file
 
 rm(list =ls())
-library(dplyr)
+require(survival)
+require(dplyr)
 
 # STEP 1: Create data frames (and auxiliary objects)
 current_folder <-  getwd()
@@ -10,7 +11,20 @@ datain_extension <- "Rdata"
 
 load(paste0(current_folder, "/data/", datain_basename, ".", datain_extension), verbose =TRUE)
 
+
+message("==>===> `olink_analytical_dataset040323` data: ",
+                 nrow(olink_analytical_dataset040323), " x ", ncol(olink_analytical_dataset040323)) 
+
 accord <- olink_analytical_dataset040323 %>% filter(YRS_PRIMARY > 0)
+message("==>===> `accord` data: ", nrow(accord), " x ", ncol(accord)) 
+
+path_Info <- list(
+   cdir             = current_folder,
+   script_name      = "060accord_olink_analytical_dataset040323",  # R script (this file) 
+   dfin_base        = datain_basename,                             # External file with dataset (without extension)
+   dfin_ext         = datain_extension,                            
+   dfnms_all        = "accord"                                     # Data frame names created by this script
+)
 
 
 #--- Derive variables
@@ -29,6 +43,7 @@ accord <- accord %>%
     BPTRIAL == 1 & GLYINT == 1 & BPINT == 1 ~ 8,
     TRUE ~ NA_integer_  # This handles any other cases that do not match the above conditions
   ))
+
   
 ##############################################################################################
 # Split by alb status ( skipped)
@@ -36,87 +51,112 @@ accord <- accord %>%
 # -- alb   <- filter(accord, UACR_gp1 == 2) #n=432
 ##############################################################################################
 
-#----  Prepare info (all variables to be included in data)
+#----  Prepare info 
 
-# Prepare `keep_cvars` vector (include weight and filter vars, if any)
-nx <-21
-BM_cvars  <- paste("BM",1:nx, sep="")
-BMQ_cvars <- paste("BMQ",1:nx, sep="")
-CCN_cvars <- paste("CCN", 1:7, sep="")
-cvars0 <- c("BPTRIAL", "GLYINT", "BPINT", "strtm", "SUBCO15")
-cvars1 <- c("BASE_UACR", "BASE_GFR", "HBA1C") 
-cvars2    <- c("FEMALE","AGE")
-keep_cxvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep (DO NOT include time variables, `subcohort`, `cch_case` variables) 
-
-#--- `tvars?` lists 
+#--- `tvars?` lists (one list will be selected
 tvar1 <- list(
-    tvars  = c("YRS_PRIMARY", "PRIMARY"),  #  Pair of variables used to create Surv objects for Cox model
+    tnms  = c("YRS_PRIMARY", "PRIMARY"),  #  Pair of variables used to create Surv objects for Cox model
     tlabels = c("Time to primary outcome or censoring (years)", "Primary outcome (ESKD/Dialysis, 0=NO, 1=YES)"),
-    svalues = 0:1,                         # event status variable values
-    slevels = c("censored", "ESKD/Dialysis"))
+    slevels = 0:1,                         # event status variable values
+    slabels = c("0-censored", "1-ESKD/Dialysis"))
 
 tvar2 <- list(
-    tvars  = c("YRS_CASE40_JUN", "CASE40_JUNE"),  #  Pair of variables used to create Surv objects for Cox model
+    tnms  = c("YRS_CASE40_JUN", "CASE40_JUNE"),  #  Pair of variables used to create Surv objects for Cox model
     tlabels = c("Time to secondary outcome (yrs)", "Secondary outcome (ESKD/Dialysis/eGFR)"),
-    svalues = 0:1,                         # event status variable values
-    slevels = c("censored", "ESKD/Dialysis/eGFR"))
+    slevels = 0:1,                         # event status variable values
+    slabels = c("0-censored", "1-ESKD/Dialysis/eGFR"))
     
 tvar3 <- list(
-    tvars  = c("YRS_DECLINE40_PLUS", "DECLINE40_PLUS"),  #  Pair of variables used to create Surv objects for Cox model
+    tnms  = c("YRS_DECLINE40_PLUS", "DECLINE40_PLUS"),  #  Pair of variables used to create Surv objects for Cox model
     tlabels = c("Time to 40pct eGFR decline event or cens. (yrs)", "40pct eGFR decline"),
-    svalues = 0:1,                         # event status variable values
-    slevels = c("censored", "40pct eGFR decline"))
+    slevels = 0:1,                         # event status variable values
+    slabels = c("0-censored", "1: 40pct eGFR decline"))
     
 tvar4 <- list(
-    tvars  = c("FU_TM_ACCORDION", "TM_ACCORDION"),  #  Pair of variables used to create Surv objects for Cox model
+    tnms  = c("FU_TM_ACCORDION", "TM_ACCORDION"),  #  Pair of variables used to create Surv objects for Cox model
     tlabels = c("Time to death from any cause (years)", "Death from any cause"),
-    svalues = 0:1,                         # event status variable values
-    slevels = c("censored", "Death from any cause"))
+    slevels = 0:1,                         # event status variable values
+    slabels = c("0-censored", "1-Death from any cause"))
 
 tvar5 <- list(
-    tvars  = c("YRS_PRIMARY", "STATUS_PRI"),  #  Pair of variables used to create Surv objects for competing risk model
+    tnms  = c("YRS_PRIMARY", "STATUS_PRI"),  #  Pair of variables used to create Surv objects for competing risk model
     tlabels = c("Time to primary outcome (ESKD/Dialysis (years)", "Status for primary outcome"),
-    svalues = 0:2,                         # event status variable values
-    slevels = c("censored", "Primary event", "Death before primary outcome"))
+    slevels = 0:2,                         # event status variable values
+    slabels = c("0-censored", "1-Primary event", "2-Death before primary outcome"))
 
 tvar6 <- list(
-    tvars  = c("YRS_CASE40_JUN", "STATUS_SEC"),  #  Pair of variables used to create Surv objects for competing risk model
+    tnms  = c("YRS_CASE40_JUN", "STATUS_SEC"),  #  Pair of variables used to create Surv objects for competing risk model
     tlabels = c("Time to secondary outcome (yrs)", "Status for secondary outcome"),
-    svalues = 0:2,                         # event status variable values
-    slevels = c("censored", "Primary event", "Death before primary outcome"))
+    slevels = 0:2,                         # event status variable values
+    slabels = c("0-censored", "1-Secondary event", "2-Death before secondary outcome"))
    
 
 #   Select one tvars list !!!
-tvar_select <- tvar5 # 
+tvar_Info <- tvar5 # 
 
 
-# Fine-Gray name (ignored if `tvar_select` has one row, i.e. no competing risk)
 
-FG_dfname <- paste0("accord_FG.", tvar_select$tvars[1])
+# Prepare `keep_cvars` vector (include weight, filter vars, CCH_vars if any)
+nx        <- 21
+BM_cvars  <- paste("BM",1:nx, sep="")
+BMQ_cvars <- paste("BMQ",1:nx, sep="")
+CCN_cvars <- paste("CCN", 1:7, sep="")
+cvars0    <- c("MASKID", "BPTRIAL", "GLYINT", "BPINT", "strtm", "SUBCO15")
+cvars1    <- c("BASE_UACR", "BASE_GFR", "HBA1C") 
+cvars2    <- c("FEMALE","AGE")
+keep_cxvars <- c(BM_cvars, cvars0, cvars1, cvars2) # Variables to keep (DO NOT include time variables, variables) 
+dfvars_in   <- unique(c("MASKID", tvar_Info$tnms, keep_cxvars))
 
-# Mandatory list `df_initInfo`
-df_initInfo <- list(
-   current_folder   = current_folder,
-   datain_script    = "060accord_olink_analytical_dataset040323",  # R script (his file) that creates data frames 
-   datain_basename  = datain_basename,                             # External file with dataset (without extension)
-   datain_extension = datain_extension,                            
-   dfnms_all        = "accord",                                    # Data frames created by this script
-   dfin_name        = c("accord","accord_updated"),                # Data frame names (original, updated)
-   keep_xvars       = keep_cxvars,
-   CR_tvar          = length(tvar_select$svalues) ==3,             # TRUE/FALSE indicates whether competing risks
-   CCH_data         = TRUE,                                        # Creates CCH data(`df_CCH_info` list is needed
-   id               = "MASKID",
-   tvar_select      = tvar_select,                                 # Select `tvars` vector
-   FG_dfname        = FG_dfname,
-   cfilter          = character(0), # Filter expression 
-   cfilter_comment  = "All data used",
-   time_horizon     = Inf,         # Inf -> no time truncation , Second element (if present) will be used as `tm_cut`
+
+# `work_data  
+dfin_Info <- list(
+  name     ="accord",
+  varsin   = dfvars_in,
+  cfilter  = character(0),                        # Filter expression (by default all observations included) 
+  cfilter_comment  = "All data used",
+  time_horizon     = Inf         # Inf -> no time truncation , Second element (if present) will be used as `tm_cut`
+)
+
+
+work_data <- accord %>% select(all_of(dfvars_in))
+message("-- `work_data` (selected vars): ", nrow(work_data), " x ",  ncol(work_data))
+
+#-- `CCH_info` list for CCH data
+CCH_Info <- list(
+   subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from CCH studies
+   weight       = "w_Self",       # ... w_Self,  w_SelfPrentice, w_BorganI
+   n_total      = 8807
+)
+
+# print(CCH_Info)
+
+mod_Info <- list(
+  wght     = character(0),        # weight variable (if any)
+  id       = "MASKID",
+  cxterms1 = c("AGE"),
+  tt_split_length  = 0.1          # 0.1, 0.01 Length of tt_split_interval used to create expanded data
+)
+
+
+#-- split_Info
+
+split_Info <- list(
    seed             = numeric(0),  # seed
-   initSplit        = 0.8,         # numeric(0) -> No split, 0.8 implies 80/20 split
+   initSplit        = 0.8,         # "X" for external,  0.8 implies 80/20 split
    nfolds           = 10
 )
 
-## df_CCH_info ( \2023_Joslin_AD_HS\_admin\2023-02-atg-notes\project_update4_2AD.pptx)
+# Mandatory list `Project_initInfo`
+Project_initInfo <- list(
+   path_Info        = path_Info,
+   tvar_Info        = tvar_Info,
+   dfin_Info        = dfin_Info,
+   CCH_Info         = CCH_Info,               # CCH info list
+   split_Info       = split_Info,             # seed, initSplit, nfolds
+   mod_Info         = mod_Info
+)
+
+## CCH_info ( \2023_Joslin_AD_HS\_admin\2023-02-atg-notes\project_update4_2AD.pptx)
 # colnames(accord)  # Data dictionary Jan112022.xlsx
 #  outside_SUBCO <- accord %>% filter(SUBCO15 ==0)
 #  inside_SUBCO <- accord %>% filter(SUBCO15 ==1)
@@ -132,20 +172,11 @@ df_initInfo <- list(
 #>   0    528 116    0 Depending on CCH_tvars exclude n=528 or 528 + 151 subjects
 #>   1    151  64    0 n=215 cases outside of subcohort
 
-# CCH_case <- if(length(tvar_select$svalues) ==2) tvar_select$tvar[2] else paste0(tvar_select$tvar[2], "_CCHcase") 
 
-# Mandatory list for CCH data (CCH_data is TRUE)
-dfCCH_initInfo <- list(
-   subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from CCH studies
-   cch_case     = "CCH_ucase"     # Name of <case variable> (string) to be created. Depends on status variable
-)
 
-## accord[, CCH_case] <- eval(as.name(CCH_case)) # cch_case variable created
-
-keep_objects <- c("accord", "df_initInfo", "dfCCH_initInfo") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
+keep_objects <- c("accord", "Project_initInfo", "work_data") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
 
 # print(df_initInfo)
-# print(dfCCH_initInfo)
 
 # Cleanup (No changes below) 
 ls_objects <- ls()
