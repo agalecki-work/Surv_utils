@@ -1,19 +1,20 @@
 
-#---- Script requires `work_data`, `df_Info`, `dfCCH_Info` objects
+#---- Script requires `work_data`, `data_Info`, `data_initInfo` objects
+# Functions `SurvSplit2_truncate`, `create_cch_weights` called
 
 source("./R/zzz_Rfuns.R")    # R functions loaded
 
 #---- Step 0: Make sure no new components created in `df_Info` list compared to `df_initInfo` 
   
-  nms0 <- names(Project_initInfo)
-  nms1 <- names(Project_Info)
-  added_Project_Info_components <- setdiff(nms1, nms0)
-  if (length(added_Project_Info_components) ==0){
-    message("---  Project_initInfo vs  Project_Info. No added components  ... OK")
-    rm(Project_initInfo)
+  nms0 <- names(data_initInfo)
+  nms1 <- names(data_Info)
+  added_data_Info_components <- setdiff(nms1, nms0)
+  if (length(added_data_Info_components) == 0){
+    message("---  data_initInfo vs  data_Info. No added components  ... OK")
+    rm(data_initInfo)
     } else {
-    message("---  Project_initInfo vs  Project_Info. Added components  ...  Error")
-    print(added_Project_Info_components)
+    message("---  data_initInfo vs data_Info. Added components  ...  Error")
+    print(added_data_Info_components)
     }
 
 message("=== Processing `work_data` ==== ")
@@ -21,11 +22,11 @@ message("=== Processing `work_data` ==== ")
  
 #---- Unpack df_Info and 
 #  path_Info, tvar_Info dfin_Info CCH_Info split_Info mod_Info 
-PI <- Project_Info
+dtInfo <- data_Info
 
-PI_nms <-  names(PI)
-for (nm in PI_nms) assign(nm, PI[[nm]], envir = .GlobalEnv)
-# print(PI_nms)
+dtInfo_nms <-  names(dtInfo)
+for (nm in dtInfo_nms) assign(nm, dtInfo[[nm]], envir = .GlobalEnv)
+# print(dtInfo_nms)
 
 #---- extract auxiliary objects
 
@@ -38,7 +39,7 @@ if(exists("CCH_Info")){
   CCH_n_total   <- CCH_Info$n_total
 }
 
-tv_tnms    <- tvar_Info$tnms 
+tv_tnms    <- tvar_Info$tnms   # Time and status variables
 tv_slevels <- tvar_Info$slevels
 tv_slabels <- tvar_Info$slabels
 message("-- tvar selected: ", tv_tnms[1], ", status var: ", tv_tnms[2])
@@ -101,20 +102,22 @@ if (length(dfs_seed) !=0) set.seed(dfs_seed) else set.seed(12435)
   if (unx == "01"){ # stratified
      work_data <- work_data %>% group_by(!!subcht_sym) %>%
        mutate(initSplit = ifelse(runif(n()) <  dfs_initSplit, 1, 0)) %>% ungroup()
-       message("-- `initSplit` stratified by ", CCH_subcohort, " created")
+       message("-- `initSplit` stratified by ", CCH_subcohort, " created: ", nrow(work_data), " x ",  ncol(work_data))
  } else {     # SRS
      work_data <- work_data %>% 
        mutate(initSplit = ifelse(runif(nrow(work_data)) <  dfs_initSplit, 1, 0)) %>% ungroup()
-       message("-- `initSplit` _NOT_ stratified by ", CCH_subcohort, " created")
+       message("-- `initSplit` _NOT_ stratified by ", CCH_subcohort, " created: ")
  }
-} else message("-- `initSplit` already defined it was NOT created")
+} else message("-- `initSplit` already defined it was NOT created: ", nrow(work_data), " x ",  ncol(work_data))
 
 #---- Step 4 Create `foldid`
-   message("===> Step 4: nfolds = ", dfs_nfolds) 
+   message("===> Step 4: Create `foldid` variable: nfolds = ", dfs_nfolds) 
    idx1 <- which(work_data$initSplit ==1)
    tmp  <- sample(1:dfs_nfolds, length(idx1), replace=TRUE)
    work_data$foldid <- 0
    work_data$foldid[idx1] <- tmp
+   message("-- `work_data` (variable `foldid` added): ", nrow(work_data), " x ",  ncol(work_data))
+
    print(table(work_data$foldid))
 
 #--- Step 5: Truncate time 
@@ -140,7 +143,9 @@ rm(max_time)
 
 #--- Step 6: CCH weights
 
-message ("====> Step 6")
+message ("====> Step 6: Vars with CCH weights created ")
+message("-- `work_data` (_before_ adding CCH weights): ", nrow(work_data), " x ",  ncol(work_data))
+# print(colnames(work_data))
 if (exists("CCH_n_total")){ 
  message("--- CCH_n_total ", CCH_n_total)
  work_data <- create_cch_weights(work_data, CCH_subcohort, tv_tnms[2], CCH_n_total)
@@ -148,7 +153,12 @@ if (exists("CCH_n_total")){
  message("--- CCH_n_total not defined. CCH_weights are equal to 1")
  work_data <- create_cch_weights(work_data, CCH_subcohort, tv_tnms[2], 999)
 } 
-# print(range(work_data$CCH_BorganI))
+message("-- `work_data` (_after_ adding CCH weights): ", nrow(work_data), " x ",  ncol(work_data))
+message("--- Max BorganI weight: ", max(work_data$CCH_BorganI))
+message("=====> Six steps of `work_data` processing using `./src/process_work_data.R` completed ")
+
+
+
 
 
 

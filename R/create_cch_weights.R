@@ -2,17 +2,17 @@ create_cch_weights <- function(datax, xsubcohort, xcase, n_total){
    
    dfx <- datax[, c(xsubcohort, xcase)]
    colnames(dfx) <- c("subcohort", "case")
-   
+   # print(colnames(dfx))
    ttx <- paste(sort(unique(dfx$subcohort)), collapse = "")
-   print (ttx)
+   # print (ttx)
    ## n_total  number of subjects in the entire cohort study
    n_subcohort = sum(dfx$subcohort)
    ## n_non_cases_overall = sum(data$case == 0)
    n_non_cases_overall <- n_total - sum(dfx$case == 1)
-  print(n_subcohort)
-  print(n_non_cases_overall)
-  print(n_total)
-  print(head(dfx))
+   # print(n_subcohort)
+   # print(n_non_cases_overall)
+   # print(n_total)
+   # print(head(dfx))
  # Calculate various C-C weights
 
    dt <- dfx  %>%
@@ -42,6 +42,6 @@ create_cch_weights <- function(datax, xsubcohort, xcase, n_total){
    dt$CCH_SelfPrentice <- 1
    dt$CCH_BorganI <- 1
   }
-  
+  dt <- dt %>% select(-c(subcohort, case))
   return(cbind(datax, dt))
  } # create_cch_weights 

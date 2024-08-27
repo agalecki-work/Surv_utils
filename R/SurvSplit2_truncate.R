@@ -1,9 +1,9 @@
-SurvSplit2_truncate <- function(df, tvars, tm_horizon, postfix = "_"){
+SurvSplit2_truncate <- function(df0, tvars, tm_horizon, postfix = "_"){
  
  #csurv <- paste0("Surv(", tvars[1], ",",  tvars[2], ")") # Surv(time, status)
  
  # Apply time horizon limit to the data frame
- 
+ df <- tibble(df0)
  nm1 <- paste0(tvars[1], postfix)
  nm2 <- paste0(tvars[2], postfix)
   #message("1")

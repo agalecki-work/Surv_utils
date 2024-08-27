@@ -23,7 +23,8 @@ path_Info <- list(
    script_name      = "060accord_olink_analytical_dataset040323",  # R script (this file) 
    dfin_base        = datain_basename,                             # External file with dataset (without extension)
    dfin_ext         = datain_extension,                            
-   dfnms_all        = "accord"                                     # Data frame names created by this script
+   dfnms_all        = "accord",                                    # Data frame names created by this script
+   out_prefix       = "061accord040323"                            # used in 061* script
 )
 
 
@@ -130,14 +131,6 @@ CCH_Info <- list(
 
 # print(CCH_Info)
 
-mod_Info <- list(
-  wght     = character(0),        # weight variable (if any)
-  id       = "MASKID",
-  cxterms1 = c("AGE"),
-  tt_split_length  = 0.1          # 0.1, 0.01 Length of tt_split_interval used to create expanded data
-)
-
-
 #-- split_Info
 
 split_Info <- list(
@@ -146,14 +139,14 @@ split_Info <- list(
    nfolds           = 10
 )
 
-# Mandatory list `Project_initInfo`
-Project_initInfo <- list(
-   path_Info        = path_Info,
-   tvar_Info        = tvar_Info,
+# Mandatory list `Data_initInfo`
+data_initInfo <- list(
+   path_Info        = path_Info,              # name, varsin, cfilter, cfilter_comment, time_horizon 
+   tvar_Info        = tvar_Info,              # tnms, tlabels, slevels, slabels
    dfin_Info        = dfin_Info,
-   CCH_Info         = CCH_Info,               # CCH info list
-   split_Info       = split_Info,             # seed, initSplit, nfolds
-   mod_Info         = mod_Info
+   CCH_Info         = CCH_Info,               # subcohort, weight, n_total
+   split_Info       = split_Info              # seed, initSplit, nfolds
+ 
 )
 
 ## CCH_info ( \2023_Joslin_AD_HS\_admin\2023-02-atg-notes\project_update4_2AD.pptx)
@@ -174,7 +167,7 @@ Project_initInfo <- list(
 
 
 
-keep_objects <- c("accord", "Project_initInfo", "work_data") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
+keep_objects <- c("accord", "data_initInfo", "work_data") # Objects mandatory to keep `df_initInfo`, `dfCCH_initInfo`
 
 # print(df_initInfo)
 

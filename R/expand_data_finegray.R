@@ -1,18 +1,31 @@
-expand_data_finegray <- function(data, tvar_Info){  # , etype) {
+expand_data_finegray <- function(data, tvar_Info, cwght, cid){  # , etype) {
+  # wght is character string
   tv_tvars <- tvar_Info$tnms
   tv_slevels <- tvar_Info$slevels
   tv_slabels <- tvar_Info$slabels
- print(tv_slevels)
+  # print(tv_slevels)
   ff <- data[, tv_tvars[2]]
-  print(tv_tvars[2])
-  print(head(ff))
+  # print(tv_tvars[2])
+  # print(head(ff))
   if (!is.factor(ff)){
       ffx <- factor(ff, levels = tv_slevels, labels = tv_slabels)
-      print(head(ffx))
+      ##print(head(ffx))
 
       data[, tv_tvars[2]] <- ffx
   }
   cform <- paste0("Surv(", tv_tvars[1], ", ", tv_tvars[2], ") ~ .")
-  finegray_data <- finegray(as.formula(cform), data = data, etype =tv_slabels[2])
+  #print(cid)
+  #print(cwght)
+  cstmnt <- paste0("data$", cid)
+  idx <- eval(parse(text= cstmnt))
+  #print(head(idx))
+   
+  if (length(cwght) == 0){
+    # print(cform)
+    finegray_data <- finegray(as.formula(cform), data = data, etype =tv_slabels[2], id = idx, count = "fgcount")
+  } else { 
+    wght <- eval(parse(text=paste0(data[, cwght])))
+    finegray_data <- finegray(as.formula(cform), data = data, etype =tv_slabels[2], weights = wght, id = idx, count = "fgcount")
+  }
   return(finegray_data)
 }
