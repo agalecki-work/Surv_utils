@@ -23,8 +23,12 @@ expand_data_finegray <- function(data, tvar_Info, cwght, cid){  # , etype) {
   if (length(cwght) == 0){
     # print(cform)
     finegray_data <- finegray(as.formula(cform), data = data, etype =tv_slabels[2], id = idx, count = "fgcount")
-  } else { 
-    wght <- eval(parse(text=paste0(data[, cwght])))
+  } else {
+    txt <- paste0("data[,'", cwght,"']")
+    #print(txt)
+    wght <- eval(parse(text=txt))
+    #print(length(wght))
+    #print(dim(data))
     finegray_data <- finegray(as.formula(cform), data = data, etype =tv_slabels[2], weights = wght, id = idx, count = "fgcount")
   }
   return(finegray_data)

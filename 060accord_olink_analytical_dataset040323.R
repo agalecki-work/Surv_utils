@@ -93,7 +93,7 @@ tvar6 <- list(
    
 
 #   Select one tvars list !!!
-tvar_Info <- tvar5 # 
+tvar_Info <- tvar2 # 
 
 
 
@@ -119,13 +119,12 @@ dfin_Info <- list(
 )
 
 
-work_data <- accord %>% select(all_of(dfvars_in))
+work_data <- accord %>% select(all_of(dfvars_in)) %>% filter(MASKID != 106172) 
 message("-- `work_data` (selected vars): ", nrow(work_data), " x ",  ncol(work_data))
 
 #-- `CCH_info` list for CCH data
 CCH_Info <- list(
    subcohort    = "SUBCO15",      # Subcohort variable name (string) for data from CCH studies
-   weight       = "w_Self",       # ... w_Self,  w_SelfPrentice, w_BorganI
    n_total      = 8807
 )
 
