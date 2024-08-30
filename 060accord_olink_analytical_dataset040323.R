@@ -54,7 +54,7 @@ accord <- accord %>%
 
 #----  Prepare info 
 
-#--- `tvars?` lists (one list will be selected
+#--- `tvar?` lists (one list will be selected
 tvar1 <- list(
     tnms  = c("YRS_PRIMARY", "PRIMARY"),  #  Pair of variables used to create Surv objects for Cox model
     tlabels = c("Time to primary outcome or censoring (years)", "Primary outcome (ESKD/Dialysis, 0=NO, 1=YES)"),
@@ -91,8 +91,7 @@ tvar6 <- list(
     slevels = 0:2,                         # event status variable values
     slabels = c("0-censored", "1-Secondary event", "2-Death before secondary outcome"))
    
-
-#   Select one tvars list !!!
+#   Select one tvar list !!!
 tvar_Info <- tvar2 # 
 
 
